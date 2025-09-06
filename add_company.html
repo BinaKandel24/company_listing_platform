@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Add / Edit Company</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 30px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    header {
+      background-color: #333;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    header .logo {
+      font-size: 20px;
+      font-weight: bold;
+    }
+    #logoutBtn {
+      background: #dc3545;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      color: white;
+      transition: background-color 0.2s ease;
+    }
+    #logoutBtn:hover {
+      background-color: #b02a37;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    form {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input[type="text"], textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      resize: vertical;
+      font-size: 16px;
+      background-color: white;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      cursor: text;
+    }
+    textarea {
+      height: 100px;
+    }
+    button {
+      margin-top: 25px;
+      padding: 12px 20px;
+      font-size: 16px;
+      background-color: #28a745;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+
+    @media screen and (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">[Co. Logo]</div>
+  <button id="logoutBtn">Logout</button>
+</header>
+
+<h2 id="formTitle">Add New Company</h2>
+
+<form id="companyForm" autocomplete="off">
+  <label for="name">Company Name *</label>
+  <input type="text" id="name" name="name" required />
+
+  <label for="address">Address *</label>
+  <input type="text" id="address" name="address" required />
+
+  <label for="info">Business Info *</label>
+  <textarea id="info" name="info" required></textarea>
+
+  <label for="category">Category *</label>
+  <select id="category" name="category" required>
+    <option value="" disabled selected>Select a category</option>
+    <option value="food">Food</option>
+    <option value="clothing">Clothing</option>
+    <option value="tech">Tech</option>
+  </select>
+
+  <label for="contact">Contact Number *</label>
+  <input type="text" id="contact" name="contact" required />
+
+  <button type="submit" id="submitBtn">Add Company</button>
+</form>
+
+<script>
+  const logoutBtn = document.getElementById('logoutBtn');
+  logoutBtn.onclick = () => {
+    localStorage.removeItem('userType');
+    window.location.href = 'login.html';
+  };
+
+  // Check login type
+  const userType = localStorage.getItem('userType');
+  if(userType !== 'owner'){
+    alert('Access denied! Only business owners can add or edit companies.');
+    window.location.href = 'index.html';
+  }
+
+  const form = document.getElementById('companyForm');
+  const formTitle = document.getElementById('formTitle');
+  const submitBtn = document.getElementById('submitBtn');
+
+  // Get company id from URL for editing
+  const urlParams = new URLSearchParams(window.location.search);
+  const companyId = urlParams.get('id');
+
+  // Load companies from localStorage
+  function getCompanies(){
+    const stored = localStorage.getItem('companies');
+    return stored ? JSON.parse(stored) : [];
+  }
+
+  function saveCompanies(companies){
+    localStorage.setItem('companies', JSON.stringify(companies));
+  }
+
+  if(companyId){
+    formTitle.textContent = 'Edit Company';
+    submitBtn.textContent = 'Save Changes';
+
+    const companies = getCompanies();
+    const company = companies.find(c => c.id === companyId);
+
+    if(company){
+      form.name.value = company.name;
+      form.address.value = company.address;
+      form.info.value = company.info;
+      form.category.value = company.category;
+      form.contact.value = company.contact;
+    } else {
+      alert('Company not found.');
+      window.location.href = 'index.html';
+    }
+  }
+
+  form.onsubmit = (e) => {
+    e.preventDefault();
+
+    const newCompany = {
+      id: companyId || Date.now().toString(),
+      name: form.name.value.trim(),
+      address: form.address.value.trim(),
+      info: form.info.value.trim(),
+      category: form.category.value,
+      contact: form.contact.value.trim(),
+      rating: 0,
+      ratingsCount: 0
+    };
+
+    let companies = getCompanies();
+
+    if(companyId){
+      // Editing existing company
+      companies = companies.map(c => c.id === companyId ? newCompany : c);
+    } else {
+      // Adding new company
+      companies.push(newCompany);
+    }
+
+    saveCompanies(companies);
+
+    alert(companyId ? 'Company updated successfully!' : 'Company added successfully!');
+    window.location.href = 'index.html';
+  };
+</script>
+
+</body>
+</html>

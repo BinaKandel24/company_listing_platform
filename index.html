@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Company Listing Platform</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+    }
+
+    header {
+      background-color: #333;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header .logo {
+      font-size: 20px;
+      font-weight: bold;
+    }
+    #logoutBtn {
+      background: #dc3545;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      color: white;
+      transition: background-color 0.2s ease;
+    }
+    #logoutBtn:hover {
+      background-color: #b02a37;
+    }
+
+    .container {
+      padding: 30px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .filter {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    select {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      width: 200px;
+      background-color: white;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      cursor: pointer;
+    }
+
+    .company-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .company-card {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+    .company-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    .company-card h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    .company-info {
+      font-size: 14px;
+      margin: 5px 0;
+      color: #555;
+    }
+    .rating {
+      color: #f5a623;
+      font-size: 18px;
+    }
+    .add-company-btn {
+      display: block;
+      margin: 25px auto 0 auto;
+      padding: 12px 25px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      max-width: 200px;
+      text-align: center;
+      text-decoration: none;
+    }
+    .add-company-btn:hover {
+      background-color: #218838;
+    }
+    @media screen and (max-width: 600px) {
+      .company-grid {
+        grid-template-columns: 1fr;
+      }
+      select {
+        width: 100%;
+      }
+      .add-company-btn {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">[Co. Logo]</div>
+  <button id="logoutBtn">Logout</button>
+</header>
+
+<div class="container">
+  <h2>Featured Companies</h2>
+
+  <div class="filter">
+    <label for="categoryFilter">Filter by category: </label>
+    <select id="categoryFilter">
+      <option value="all">All</option>
+      <option value="food">Food</option>
+      <option value="clothing">Clothing</option>
+      <option value="tech">Tech</option>
+    </select>
+  </div>
+
+  <div class="company-grid" id="companyGrid"></div>
+
+  <button class="add-company-btn" id="addCompanyBtn" style="display:none;">Add New Company</button>
+</div>
+
+<script>
+  // Check if user logged in
+  const userType = localStorage.getItem('userType');
+  if (!userType) {
+    window.location.href = 'login.html';
+  }
+
+  // Show add company button only for owners
+  const addBtn = document.getElementById('addCompanyBtn');
+  if(userType === 'owner'){
+    addBtn.style.display = 'block';
+  }
+
+  addBtn.onclick = () => {
+    window.location.href = 'add_company.html';
+  };
+
+  // Logout button
+  document.getElementById('logoutBtn').onclick = () => {
+    localStorage.removeItem('userType');
+    window.location.href = 'login.html';
+  };
+
+  function getCompanies() {
+    const stored = localStorage.getItem('companies');
+    return stored ? JSON.parse(stored) : [];
+  }
+
+  function renderStars(num) {
+    return '★'.repeat(num) + '☆'.repeat(5 - num);
+  }
+
+  function capitalize(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  const companyGrid = document.getElementById('companyGrid');
+  const categoryFilter = document.getElementById('categoryFilter');
+
+  function renderCompanies(filterCategory = 'all') {
+    const companies = getCompanies();
+    companyGrid.innerHTML = '';
+
+    let filtered = companies;
+    if(filterCategory !== 'all') {
+      filtered = companies.filter(c => c.category === filterCategory);
+    }
+
+    if(filtered.length === 0) {
+      companyGrid.innerHTML = '<p>No companies found for this category.</p>';
+      return;
+    }
+
+    filtered.forEach(company => {
+      const avgRating = company.ratingsCount === 0 ? 0 : Math.round(company.rating);
+      const card = document.createElement('div');
+      card.classList.add('company-card');
+      card.innerHTML = `
+        <h3>${company.name}</h3>
+        <p class="company-info"><strong>Address:</strong> ${company.address}</p>
+        <p class="company-info"><strong>Info:</strong> ${company.info}</p>
+        <p class="company-info"><strong>Category:</strong> ${capitalize(company.category)}</p>
+        <p class="company-info"><strong>Contact:</strong> ${company.contact}</p>
+        <p class="rating">Rating: ${renderStars(avgRating)} (${company.ratingsCount} reviews)</p>
+      `;
+      card.onclick = () => {
+        window.location.href = `company.html?id=${company.id}`;
+      };
+      companyGrid.appendChild(card);
+    });
+  }
+
+  categoryFilter.onchange = () => {
+    renderCompanies(categoryFilter.value);
+  };
+
+  // Initial render
+  renderCompanies();
+</script>
+
+</body>
+</html>
